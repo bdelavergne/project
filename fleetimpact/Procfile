@@ -1,1 +1,1 @@
-web: gunicorn fleetimpact.wsgi
+web: gunicorn trucks:app
