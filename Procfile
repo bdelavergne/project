@@ -1,1 +1,1 @@
-web: gunicorn trucks.wsgi
+web: gunicorn trucks:app
