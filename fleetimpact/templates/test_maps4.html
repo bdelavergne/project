@@ -1,0 +1,167 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ecotaxe - Calcul gratuit</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- bootstrap -->
+    <link href="{% static "assets/css/bootstrap/bootstrap.css"%}" rel="stylesheet">
+    <link href="{% static "assets/css/bootstrap/bootstrap-overrides.css"%}" type="text/css" rel="stylesheet">
+
+    <!-- global styles -->
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/compiled/layout.css"%}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/compiled/elements.css"%}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/compiled/icons.css"%}">
+
+    <!-- libraries -->
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/lib/font-awesome.css"%}">
+    
+    <!-- this page specific styles -->
+    <link rel="stylesheet" href="{% static "assets/css/compiled/new-user.css"%}" type="text/css" media="screen">
+
+    <!-- open sans font -->
+    <link href="http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <style>
+
+      #map_canvas {
+        width: 600px;
+        height: 400px;
+      }
+      .wrapper {
+        display: block;
+        margin:auto;
+        width: 80%;
+      }
+      .ecotaxe {
+        width: 40%;
+        margin-top: 50px;
+      }
+      .titre-ecotaxe {
+        margin-bottom: 30px;
+        font-size: 2.5em;
+      }
+    </style>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+    <script>
+      function initialize() {
+        var map_canvas = document.getElementById('map_canvas');
+        var map_options = {
+          center: new google.maps.LatLng(47, 1.8),
+          zoom: 6,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        }
+        var map = new google.maps.Map(map_canvas, map_options)
+      }
+      google.maps.event.addDomListener(window, 'load', initialize);
+
+      $(document).ready(function(){
+        $("#ecotaxe").click(function() {
+            $("#ecotaxe-result").html( function () {
+                return $("#départ").val() + " " + $("#arrivée").val();
+            })
+        })
+        });  
+      $(document).ready(function(){
+         var service = new google.maps.DistanceMatrixService()
+         service.getDistanceMatrix(
+          {
+            origins: [paris],
+            destinations: [Marseille],
+            travelMode: google.maps.TravelMode.DRIVING,
+            unitSystem: UnitSystem,
+            durationInTraffic: Boolean,
+            avoidHighways: false,
+            avoidTolls: false
+          }, callback);
+
+      });
+       
+    
+
+      
+    </script>
+
+  </head>
+  
+  <body>
+      <header class="navbar navbar-inverse" role="banner">
+        <div class="navbar-header">
+            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="index.html"><img src="img/logo.png"></a>
+        </div>
+        <nav class="collapse navbar-collapse" role="navigation">
+            <ul class="nav navbar-nav">
+                <li><a href="chart-showcase.html">Charts</a></li>
+                <li><a href="user-list.html">Users</a></li>
+                <li><a href="form-showcase.html">Forms</a></li>
+                <li><a href="gallery.html">Gallery</a></li>
+                <li><a href="icons.html">Icons</a></li>
+                <li><a href="calendar.html">Calendar</a></li>
+                <li><a href="tables.html">Tables</a></li>
+                <li><a href="ui-elements.html">UI Elements</a></li>
+                <li class="visible-lg">
+                    <input class="search" type="text" style="margin-left:30px;">
+                </li>
+            </ul>
+        </nav>        
+    </header>
+        <div class="content wide-content">
+            <div class="settings-wrapper" id="pad-wrapper">
+                <div class="row">
+                    <div class="wrapper">
+
+                        <div class="col-md-7 personal-info ecotaxe">
+                                        
+                            <h5 class="personal-title titre-ecotaxe">Calculez votre Ecotaxe</h5>
+
+                            <form class="form-horizontal" role="form">
+                                <div class="form-group">
+                                    <label class="col-lg-2 control-label">Ville de départ</label>
+                                    <div class="col-lg-8">
+                                        <input class="form-control" type="text" value="Départ" id="départ">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-lg-2 control-label">Ville d'arrivée</label>
+                                    <div class="col-lg-8">
+                                        <input class="form-control" type="text" value="Arrivée" id="arrivée">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-lg-2 control-label">Catégorie:</label>
+                                    <div class="col-lg-8">
+                                        <div class="ui-select">
+                                            <select id="catégorie" name="catégorie">
+                                                <option value="Hawaii">Catégorie 3</option>
+                                                <option value="Alaska">Catégorie 2</option>
+                                                
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="actions">
+                                    <input type="button" id="ecotaxe" class="btn-glow primary" value="Calcul" >
+                                    
+                                </div>
+                                <div id="ecotaxe-result" style="width:100px; heigth:50px; float:right;"></div>
+                            </form>
+                        </div>
+                        <div class ="pull-right" id="map_canvas"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+  </body>
+</html>

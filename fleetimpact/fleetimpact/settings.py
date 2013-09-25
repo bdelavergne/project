@@ -140,12 +140,19 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'south',
     'trucks',
+    'signin',
+    'polls',
+    'todo',
+    'forum',
+    'registration',
+    'ecotaxe',
     # Uncomment the next line to enable the admin:
-    # 'django.contrib.admin',
+     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
-    # 'django.contrib.admindocs',
+     'django.contrib.admindocs',
 )
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
@@ -155,6 +162,15 @@ SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 # the site admins on every HTTP 500 error when DEBUG=False.
 # See http://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
+
+ACCOUNT_ACTIVATION_DAYS = 7 # one week activation window
+EMAIL_HOST='localhost'
+EMAIL_PORT=1023
+EMAIL_HOST_USER='bdelavergne'
+EMAIL_HOST_PASSWORD='BalthaZ_aR11'
+
+
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

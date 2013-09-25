@@ -1,0 +1,127 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ecotaxe - Calcul gratuit</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- bootstrap -->
+    <link href="{% static "assets/css/bootstrap/bootstrap.css"%}" rel="stylesheet">
+    <link href="{% static "assets/css/bootstrap/bootstrap-overrides.css"%}" type="text/css" rel="stylesheet">
+
+    <!-- global styles -->
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/compiled/layout.css"%}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/compiled/elements.css"%}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/compiled/icons.css"%}">
+
+    <!-- libraries -->
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/lib/font-awesome.css"%}">
+    
+    <!-- this page specific styles -->
+    <link rel="stylesheet" href="{% static "assets/css/compiled/new-user.css"%}" type="text/css" media="screen">
+
+    <!-- open sans font -->
+    <link href="http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <style>
+
+      #map_canvas {
+        width: 600px;
+        height: 400px;
+      }
+      .wrapper {
+        display: block;
+        margin:auto;
+        width: 80%;
+      }
+      .ecotaxe {
+        width: 40%;
+        margin-top: 50px;
+      }
+      .titre-ecotaxe {
+        margin-bottom: 30px;
+        font-size: 2.5em;
+      }
+    </style>
+
+<
+  </head>
+  
+  <body>
+      <header class="navbar navbar-inverse" role="banner">
+        <div class="navbar-header">
+            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="index.html"><img src="img/logo.png"></a>
+        </div>
+        <nav class="collapse navbar-collapse" role="navigation">
+            <ul class="nav navbar-nav">
+                <li><a href="chart-showcase.html">Charts</a></li>
+                <li><a href="user-list.html">Users</a></li>
+                <li><a href="form-showcase.html">Forms</a></li>
+                <li><a href="gallery.html">Gallery</a></li>
+                <li><a href="icons.html">Icons</a></li>
+                <li><a href="calendar.html">Calendar</a></li>
+                <li><a href="tables.html">Tables</a></li>
+                <li><a href="ui-elements.html">UI Elements</a></li>
+                <li class="visible-lg">
+                    <input class="search" type="text" style="margin-left:30px;">
+                </li>
+            </ul>
+        </nav>        
+    </header>
+        <div class="content wide-content">
+            <div class="settings-wrapper" id="pad-wrapper">
+                <div class="row">
+                    <div class="wrapper">
+
+                        <div class="col-md-7 personal-info ecotaxe">
+                                        
+                            <h5 class="personal-title titre-ecotaxe">Calculez votre Ecotaxe</h5>
+
+                            <form class="form-horizontal" role="form">
+                                <div class="form-group">
+                                    <label class="col-lg-2 control-label">Ville de départ</label>
+                                    <div class="col-lg-8">
+                                        <input class="form-control" type="text" value="Départ">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-lg-2 control-label">Ville d'arrivée</label>
+                                    <div class="col-lg-8">
+                                        <input class="form-control" type="text" value="Arrivée">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-lg-2 control-label">Catégorie:</label>
+                                    <div class="col-lg-8">
+                                        <div class="ui-select">
+                                            <select id="catégorie" name="catégorie">
+                                                <option value="Hawaii">Catégorie 3</option>
+                                                <option value="Alaska">Catégorie 2</option>
+                                                
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="actions">
+                                    <input type="button" class="btn-glow primary" value="Calcul">
+                                    
+                                </div>
+                            </form>
+                        </div>
+                        <div class ="pull-right" id="map_canvas"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+  </body>
+</html>
