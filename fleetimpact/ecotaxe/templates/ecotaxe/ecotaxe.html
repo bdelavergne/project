@@ -48,22 +48,16 @@
                 points = $.ajax({
                     url : "http://127.0.0.1:8000/maps3",
                     async: false
-                    //success : function(result){
-                      //  return points = result;
-                    //}
                 }).responseText;
 
                 var tolls_data = points.split("\\n");
 
-
                 for (var i=0, len=tolls_data.length; i<len;i++){
                     var tolls_data_split= tolls_data[i].split(",");
-                    var tmp_point = [ tolls_data_split[0], new google.maps.LatLng(tolls_data_split[2], tolls_data_split[1]), tolls_data_split[3]];
+                    var tmp_point = [ tolls_data_split[0].replace(' ',''), new google.maps.LatLng(tolls_data_split[2], tolls_data_split[1]), tolls_data_split[3]];
                     tolls.push(tmp_point);
                 }
-
                 return tolls;
-
             }
 
             function initialize() {
@@ -81,13 +75,13 @@
 
               // Default the map view to France
               var mapOptions = {
-                center: new google.maps.LatLng(46, 2),
+                center: new google.maps.LatLng(46.5, 2),
                 mapTypeId: google.maps.MapTypeId.ROADMAP,
                 zoom: 6,
-
               };
               
               map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+              
               //routeBoxer = new RouteBoxer();
               
               directionService = new google.maps.DirectionsService();
@@ -111,17 +105,16 @@
             }
             
 
-            function calcRoute() {
-              
+            function calcRoute() {              
               // remove error message
               $(".error-message").remove();
 
               // Clear any previous route boxes / checkpoints from the map
-              clearBoxes();
+              // clearBoxes();
               // distance = 0.5; //RouteBoxer variable
  
               var km_taxeInput = document.getElementById("km_taxe")
-              var distanceInput = document.getElementById("distance")
+              var ecotaxeInput = document.getElementById("Ecotaxe")
               var request = {
                 origin: document.getElementById("start").value,
                 destination: document.getElementById("end").value,
@@ -148,7 +141,7 @@
                             checkpoints.push(tolls[j]);
                         }
                     }
-                  distanceInput.value = route;
+                  ecotaxeInput.value = route;
 
                   }    
                   /*
@@ -159,7 +152,7 @@
 
                         chekpoints.push(tolls[i])
                     }
-                  distanceInput.value = Ecotaxe_calculation(checkpoints);
+                  ecotaxeInput.value = Ecotaxe_calculation(checkpoints);
                   }
                 }
                 */
@@ -172,8 +165,301 @@
                 }
               });
             }
-
             
+            function Ecotaxe_checkpoints (result) {
+               
+              var km_taxeInput = document.getElementById("km_taxe")
+              var ecotaxeInput = document.getElementById("Ecotaxe")
+              var total_distance = document.getElementById("total_distance")
+              var polyline = new google.maps.Polyline({path:result.routes[0].overview_path});
+
+              //var boxes = routeBoxer.box(path, distance);
+               
+              // new version with more points for the polyline
+              /*
+              var polyline = new google.maps.Polyline({
+                  path :[],
+              })
+              var bounds = new google.maps.LatLngBounds();
+
+              var legs= result.routes[0].legs;
+              for (i=0; i<legs.length;i++){
+                  var steps = legs[i].steps;
+                  for (j=0;j<steps.length;j++){
+                      var nextSegment = steps[j].path;
+                      for (k=0;k<nextSegment.length;k++){
+                          polyline.getPath().push(nextSegment[k]);
+                          bounds.extend(nextSegment[k]);
+                      }
+                  }
+              }
+              */                           
+              // end new version with more points 
+
+              var checkpoints =[];
+              tolls = create_toll();
+              var route_taken = Itinerary_routes(Itinerary_instructions(result.routes[0]));
+              //var route_taken = Itinerary_instructions(result.routes[0]);
+              
+
+              for (var i=0; i< tolls.length; i++){
+                if (google.maps.geometry.poly.isLocationOnEdge(tolls[i][1], polyline, 0.05) )
+                    {
+                      checkpoints.push(tolls[i]);                      
+                }
+                
+
+                //km_taxeInput.value = result.routes[0].legs[0].steps[15].instructions;
+                //km_taxeInput.value = Itinerary_instructions(result.routes[0]);
+              }
+              var output = appropriate_points(checkpoints,route_taken);
+              
+
+
+
+              ecotaxeInput.value = checkpoints;
+              km_taxeInput.value = render_ecotaxe(output);
+              //ecotaxeInput.value = Ecotaxe_calculation(render_ecotaxe(output));
+              //km_taxeInput.value = Ecotaxe_detail(checkpoints.sort());
+              total_distance.value = result.routes[0].legs[0].distance.value/1000;
+              //total_distance.value = output;
+
+            }
+
+            // For a given segment from instructions , checks which checkpoints are relevant
+
+            function appropriate_points (checkpoints, route_taken){
+              var result = [];
+              var checkpoints_routes =[]
+              console.log(route_taken);
+              for (var k=0; k< checkpoints.length; k++){
+                checkpoints_routes.push(checkpoints[k][0])
+              }
+              
+              for (var i=0; i<route_taken.length; i++){
+                var tmp_result=[];
+
+                for (var j=0; j< checkpoints.length; j++){
+                  // var ind = checkpoints_routes.indexOf(route_taken[i][0]);
+                  if ( checkpoints_routes[j] == route_taken[i][0] ){
+                      tmp_result.push(checkpoints[j]);
+                  }
+                }
+                
+                if (tmp_result.length != 0){
+                  var x = geographic_test(tmp_result, route_taken[i]); 
+                  if (x.length !=0){  
+
+                  result.push(x); // array of arrays ?
+                }
+              }
+              }
+              return result; // array of all the right checkpoints
+            }
+
+            //takes two arguments, the array of checkpoints, and the object containing the instructions
+
+            function geographic_test (array, segment) { 
+              var start = segment[1];
+              var end = segment[2];
+              var result = [];
+                            
+              // double produit scalaire pour verifier que le point est dans la bande end/start
+              for (var i = 0; i < array.length; i++){
+               
+                if ( (end.lat() - start.lat()) * (array[i][1].lat() - start.lat()) + (end.lng() - start.lng()) * (array[i][1].lng() - start.lng()) > 0 && -(end.lat() - start.lat()) * (array[i][1].lat() - end.lat()) - (end.lng() - start.lng()) * (array[i][1].lng() - end.lng()) > 0 ) {
+                  result.push(array[i]);
+                }
+              }  
+              return result;              
+            }
+
+
+            function render_ecotaxe(output){
+              result = [];
+              for (var i=0; i<output.length; i++) {
+                var tmp = 0;
+                for (var j in output[i]){
+                  if (output[i].hasOwnProperty(j)) {                          
+                    tmp += parseFloat(output[i][j][2]);
+                  }
+                }
+                result.push([output[i][j][0], tmp]);
+              }
+            
+              return result;
+            }
+
+
+            /*
+            //checks if a toll point really is on the itinerary (point = tolls[i] et array = route_taken)
+            function reverse_check(tolls,route_taken){
+              var roads=[];
+              for (var i =0; i<route_taken.length; i++){
+                roads.push(route_taken[i][0]);
+              }
+
+              if (roads.indexOf(tolls[0]) != -1){             
+                var ind = roads.indexOf(tolls[0]);
+
+
+                function dist_square (ind){
+                  dist_square = Math.pow(route_taken[ind][1].lat() - route_taken[ind][2].lat(),2)+ Math.pow(route_taken[ind][1].lng() - route_taken[ind][2].lng(),2);
+                  return dist_square;
+                } 
+
+                function min_dist_square (ind) {
+                  min_dist_square = Math.min( Math.pow(route_taken[ind][1].lat() - tolls[1].lat(),2) + Math.pow(route_taken[ind][1].lng() - tolls[1].lng(),2), Math.pow(route_taken[ind][2].lat() - tolls[1].lat(),2) + Math.pow(route_taken[ind][2].lng() - tolls[1].lng(),2));
+                  return min_dist_square;
+                }
+
+                
+
+                if ( Math.abs(Math.sqrt(Math.pow(route_taken[ind][1].lat() - tolls[1].lat(),2) + Math.pow(route_taken[ind][1].lng() - tolls[1].lng(),2)) - Math.sqrt(Math.pow(route_taken[ind][2].lat() - tolls[1].lat(),2) + Math.pow(route_taken[ind][2].lng() - tolls[1].lng(),2))) < Math.sqrt(dist_square)*0.9){
+                  result = true;
+                }
+
+                //if (dist_square > 0.4 &&  min_dist_square > 0.1){ //0.1 equivalent to 10km
+                //  result = true;
+                //}
+
+                //else if ( dist_square < 0.01 && min_dist_square < 0.002){ //0.1 equivalent to 10km
+                //  result = true;
+                //}
+
+                else {
+                  if ( dist_square > 20 * min_dist_square) {
+                    
+                    var result = true;
+                  }
+                
+                  else result = false;
+              }
+                            
+              return result;
+
+              }
+             }
+
+             //end of the reverse check 
+            */
+
+            // takes a sorted (by road name) array of all checkpoints and returns the sum of taxed km for each of the routes
+            function Ecotaxe_detail (array){
+              var R = array[0][0];
+              var detail = [[0,0]];
+              var j=0;
+              for (var i=0 ; i<array.length; i++){
+                if (array[i][0] == R){ 
+                  detail[j][0]=array[i][0];
+                  detail[j][1] += parseFloat(array[i][2]);
+                }
+                else {
+                  R=array[i][0];
+                  j++;
+                  detail.push([array[i][0],parseFloat(array[i][2])]);
+                }
+              }
+              return detail;
+            }
+              
+            
+            // displays itinerary instructions for the asked route
+            function Parse_instructions(text){
+              text = text.replace(/"/g,"'");
+              var result = text.match(/[DNA][0-9][0-9]?[0-9]?[0-9]?[AB]?/, '');
+              if (!result){
+                result = [""];
+              }
+              result = result[0];
+              return result;
+            }
+
+            //collects itinerary instructions and the start/end point for these instructions
+            function Itinerary_instructions(array){
+               
+              var instr =[];
+              var legs=array.legs;
+              for (i=0; i<legs.length;i++){
+                var steps = legs[i].steps
+                  for (j=0;j<steps.length;j++){
+                    var route_name = steps[j].instructions;
+                    var start = steps[j].start_location;
+                    var end = steps[j].end_location;
+                    instr.push([route_name, start, end]);
+                  }
+              }
+              return instr;             
+            }
+
+
+            //takes directions and eliminates empty ones after parsing. Then updates the value of the end latlng if appropriate
+            function Itinerary_routes(array){
+              var result =[];
+              var R=""
+              var j=0;
+              for (var i=0; i<array.length; i++) {
+                var tmp = Parse_instructions(array[i][0]);
+                if (tmp.length !=0){
+                  if( tmp == R) {
+                    result[j-1][2]=array[i][2];
+                  }
+                  else {
+                    result.push([tmp,array[i][1],array[i][2]]);
+                    R=tmp;
+                    j++;                 
+                  }
+                }
+                // do something with the empty strings (holes in the road)
+              }
+              return result;
+            }
+
+            function Ecotaxe_calculation (result) {
+
+              var categorie = parseFloat(document.getElementById("catégorie").value);
+              var norme = parseFloat(document.getElementById("norme").value);
+              var km_taxe = 0;
+              var ecotaxe =0;
+  
+              for (var i;i<result.length; i++){
+                km_taxe += result[i][1];
+              }
+              
+              ecotaxe = km_taxe * categorie * norme / 100; //in euros
+
+              return ecotaxe;
+            }
+
+            /* old ecotaxe
+            function Ecotaxe_calculation(array, type) {
+
+              var km_taxe=0;
+              var ecotaxe=0;
+
+              for (var i = 0; i < array.length; i++){
+                  km_taxe += parseFloat(array[i][2]);
+              }
+              var categorie = parseFloat(document.getElementById("catégorie").value);
+              var norme = parseFloat(document.getElementById("norme").value);
+              
+              ecotaxe = km_taxe * categorie * norme / 100; //in euros
+
+              return ecotaxe;    
+            
+            }
+            */
+
+            // Clear boxes currently on the map
+            function clearBoxes() {
+              if (boxpolys != null) {
+                for (var i = 0; i < boxpolys.length; i++) {
+                  boxpolys[i].setMap(null);
+                }
+              }
+              boxpolys = null;
+            }
+
             // Draw the array of boxes as polylines on the map
             function drawBoxes(boxes) {
               boxpolys = new Array(boxes.length);
@@ -187,104 +473,6 @@
                   map: map
                 });
               }
-            }
-            
-            function Ecotaxe_checkpoints (result) {
-                // Pasted here
-                var km_taxeInput = document.getElementById("km_taxe")
-                var distanceInput = document.getElementById("distance")
-                var polyline = new google.maps.Polyline({path:result.routes[0].overview_path});
-
-                  //var boxes = routeBoxer.box(path, distance);
-                 
-                // new version with more points for the polyline
-                /*
-                var polyline = new google.maps.Polyline({
-                    path :[],
-                })
-                var bounds = new google.maps.LatLngBounds();
-
-                var legs= result.routes[0].legs;
-                for (i=0; i<legs.length;i++){
-                    var steps = legs[i].steps;
-                    for (j=0;j<steps.length;j++){
-                        var nextSegment = steps[j].path;
-                        for (k=0;k<nextSegment.length;k++){
-                            polyline.getPath().push(nextSegment[k]);
-                            bounds.extend(nextSegment[k]);
-                        }
-                    }
-                }
-                */           
-                
-                // end new version with more points 
-
-                  var checkpoints =[];
-                  tolls = create_toll();
-
-                  for (var i=0; i< tolls.length; i++){
-                    if (google.maps.geometry.poly.isLocationOnEdge(tolls[i][1], polyline, 0.0025))
-                        {
-                        checkpoints.push(tolls[i]);
-
-                    }
-                    distanceInput.value = Ecotaxe_calculation(checkpoints);
-                    //km_taxeInput.value = result.routes[0].legs[0].steps[15].instructions;
-                    km_taxeInput.value = Itinerary_instructions(result.routes[0]);
-                  }
-
-            }
-
-            // displays itinerary instructions for the asked route
-
-            function Parse_instructions(string){
-              return string.match(/[AEDN][0-9][0-9]?[0-9]?[0-9]?/);
-            }
-
-
-            function Itinerary_instructions(array){
-               
-              var instr =[];
-              var legs=array.legs;
-              for (i=0; i<legs.length;i++){
-                var steps = legs[i].steps
-                  for (j=0;j<steps.length;j++){
-                    //var route_name = Parse_instructions(steps[j].instructions);
-                    //instr.push(route_name);
-                    instr.push(steps[j].instructions);
-                  }
-              }
-              return instr;
-        
-            }
-
-            function Ecotaxe_calculation(array, type) {
-
-                var km_taxe=0;
-                var ecotaxe=0;
-
-
-                for (var i = 0; i < array.length; i++){
-                    km_taxe += parseFloat(array[i][2]);
-                }
-                var categorie = parseFloat(document.getElementById("catégorie").value);
-                var norme = parseFloat(document.getElementById("norme").value);
-                
-                ecotaxe = km_taxe * categorie * norme / 100; //in euros
-
-                return ecotaxe;    
-            
-            }
-
-
-            // Clear boxes currently on the map
-            function clearBoxes() {
-              if (boxpolys != null) {
-                for (var i = 0; i < boxpolys.length; i++) {
-                  boxpolys[i].setMap(null);
-                }
-              }
-              boxpolys = null;
             }
 
             function clearTolls() {
@@ -458,7 +646,13 @@
                                     <div class="form-group">
                                         <label for="distance" class="col-lg-2 control-label">Ecotaxe (euros):</label>
                                         <div class="col-lg-8">
-                                            <input type="text" name="distance" id="distance" readonly="true" class="form-control"/>
+                                            <input type="text" name="distance" id="Ecotaxe" readonly="true" class="form-control"/>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="distance" class="col-lg-2 control-label">Distance Totale (km):</label>
+                                        <div class="col-lg-8">
+                                            <input type="text" name="km_taxe" id="total_distance" readonly="true" class="form-control"/>
                                         </div>
                                     </div>
                                     <div class="form-group">
